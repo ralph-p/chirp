@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api, RouterOutputs } from "~/utils/api";
 import dayjs from 'dayjs'
 import relativeTime from "dayjs/plugin/relativeTime";
+import { LoadingPage } from "~/components/loading";
 dayjs.extend(relativeTime);
 
 
@@ -15,13 +16,13 @@ const CreatePostWizard = () => {
 
   return (
     <div className="flex gap-3 m-2 p-1">
-      <Image 
-        src={user.imageUrl}        
+      <Image
+        src={user.imageUrl}
         className="h-14 w-14 rounded-full"
         alt={`@${user.username}'s profile picture`}
         width={56}
         height={56}
-        />
+      />
       <input placeholder="Input some emojis" className="grow bg-transparent outline-none" />
 
     </div>
@@ -57,12 +58,29 @@ const PostView = (props: PostWithUser) => {
   )
 }
 
-const Home: NextPage = () => {
+const Feed = () => {
+
   const { data, isLoading } = api.posts.getAll.useQuery()
-  const user = useUser()
 
-  if (!data || isLoading) return <div>Loading...</div>
+  if (isLoading) return <LoadingPage />
+  if (!data) return <div>Could not load feed</div>
+  return (
+    <div className="flex flex-col">
+      {
+        [...data, ...data]?.map((fullPost) => (
+          <PostView {...fullPost} key={fullPost.post.id} />
+        ))
+      }
+    </div>
+  )
+}
 
+const Home: NextPage = () => {
+  const { isLoaded: userLoaded, isSignedIn } = useUser()
+  // start fetching the posts asap
+  api.posts.getAll.useQuery()
+
+  if (!userLoaded) return <div />
   return (
     <>
       <Head>
@@ -74,18 +92,14 @@ const Home: NextPage = () => {
         <div className="md:max-w-2xl w-full border-x border-slate-100/10 h-full">
           <div className="border-b border-slate-100/10 p-4 flex">
 
-            {!user.isSignedIn && <SignInButton />}
-            {!!user.isSignedIn && <SignOutButton />}
+            {!isSignedIn && <SignInButton />}
+            {!!isSignedIn && <SignOutButton />}
           </div>
           <div>
             {
-              !!user.isSignedIn && <CreatePostWizard />
+              !!isSignedIn && <CreatePostWizard />
             }
-            {
-              data?.map((fullPost) => (
-                <PostView {...fullPost} key={fullPost.post.id} />
-              ))
-            }
+            <Feed />
           </div>
         </div>
       </main>
