@@ -3,7 +3,7 @@ import { type NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { api, RouterOutputs } from "~/utils/api";
+import { api, type RouterOutputs } from "~/utils/api";
 import dayjs from 'dayjs'
 import relativeTime from "dayjs/plugin/relativeTime";
 import { LoadingPage } from "~/components/loading";
@@ -26,7 +26,7 @@ const CreatePostWizard = () => {
       <Image
         src={user.imageUrl}
         className="h-14 w-14 rounded-full"
-        alt={`@${user.username}'s profile picture`}
+        alt={`profile picture`}
         width={56}
         height={56}
       />
