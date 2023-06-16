@@ -11,16 +11,16 @@ export const profileRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const [user] = await clerkClient.users.getUserList({
         username: [input.username],
-      });
-
+      });      
       if (!user) {
-        // if we hit here we need a unsantized username so hit api once more and find the user.
+        
+        // if we hit here we need a unsantized username so hit api once more and find the user based on first and last name.
         const users = (
           await clerkClient.users.getUserList({
             limit: 200,
           })
         )
-        const user = users.find((user) => user.externalAccounts.find((account) => account.username === input.username));
+        const user = users.find((user) => `${user.firstName}_${user.lastName}` === input.username);
         if (!user) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",

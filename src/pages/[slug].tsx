@@ -1,26 +1,38 @@
 
 import type { NextPage, GetStaticProps } from "next";
 import Head from "next/head";
-import { api,  } from "~/utils/api";
+import { api, } from "~/utils/api";
 import { generateSSGHelper } from "~/server/helpers/ssgHelper";
 import { PageLayout } from "~/components/layout";
+import Image from "next/image";
 
 
 
-const ProfilePage: NextPage<{username: string}> = () => {
 
-  const {data} = api.profile.getUserByUsername.useQuery({username: 'ralph-p'})
-  if(!data) return <div>User Not Found</div>
+
+const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
+
+  const { data } = api.profile.getUserByUsername.useQuery({ username })
+  if (!data) return <div>User Not Found</div>
   return (
     <>
       <Head>
         <title>{data.username}</title>
       </Head>
       <PageLayout>
-
-          {data.username}
+        <div className="relative h-36 bg-slate-600">
+          <Image
+            src={data.profileImageUrl}
+            alt={`${data.username}'s profile pic`}
+            width={128}
+            height={128}
+            className="absolute bottom-0 left-0 -mb-[64px] ml-4 rounded-full border-4 border-black bg-black"
+          />
+        </div>
+        <div className="h-[64px]"></div>
+        <div className="p-4 text-2xl font-bold">{`@${data.username ?? "unknown"}`}</div>
       </PageLayout>
-        
+
     </>
   );
 };
