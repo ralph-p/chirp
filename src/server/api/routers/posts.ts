@@ -19,7 +19,7 @@ const ratelimit = new Ratelimit({
 });
 
 const filterUserForClient = (user: User) => {
-  return { id: user.id, username: user.username, profileImageUrl: user.profileImageUrl , name: user.firstName}
+  return { id: user.id, username: user.username ||  user.firstName || '', profileImageUrl: user.profileImageUrl, emailAddresses: user.emailAddresses }
 }
 
 export const postsRouter = createTRPCRouter({
@@ -32,7 +32,6 @@ export const postsRouter = createTRPCRouter({
       const author = users.find((user) => user.id === post.authorId)
       
       if (!author) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Author for post not found" })
-      if(!author.username) author.username = author.name
       return {
         post,
         author: { ...author, username: author.username }, // need to spread the author object and add the username object to ensure type checking

@@ -63,6 +63,7 @@ const CreatePostWizard = () => {
 type PostWithUser = RouterOutputs["posts"]["getAll"][number]
 const PostView = (props: PostWithUser) => {
   const { post, author } = props;
+  
   return (
 
     <div className="flex p-8 border-b border-slate-400 p-4 gap-3">
