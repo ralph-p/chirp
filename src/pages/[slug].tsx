@@ -1,35 +1,52 @@
-import { SignOutButton, SignInButton, useUser } from "@clerk/nextjs";
-import { type NextPage } from "next";
+
+import type { NextPage, GetStaticProps } from "next";
 import Head from "next/head";
-import Link from "next/link";
-import { api, type RouterOutputs } from "~/utils/api";
-import dayjs from 'dayjs'
-import relativeTime from "dayjs/plugin/relativeTime";
-import { LoadingPage, LoadingSpinner } from "~/components/loading";
-import { useState } from "react";
-import toast from "react-hot-toast";
-dayjs.extend(relativeTime);
+import { api,  } from "~/utils/api";
+import { generateSSGHelper } from "~/server/helpers/ssgHelper";
+import { PageLayout } from "~/components/layout";
 
 
 
+const ProfilePage: NextPage<{username: string}> = () => {
 
-const ProfilePage: NextPage = () => {
-
-  const {data, isLoading} = api.profile.getUserByUsername.useQuery({username: 'ralph-p'})
-  if(isLoading) return <LoadingPage />
+  const {data} = api.profile.getUserByUsername.useQuery({username: 'ralph-p'})
   if(!data) return <div>User Not Found</div>
   return (
     <>
       <Head>
-        <title>Profile Page</title>
+        <title>{data.username}</title>
       </Head>
-      <main className="flex justify-center h-screen">
-        <div className="">
+      <PageLayout>
+
           {data.username}
-        </div>
-      </main>
+      </PageLayout>
+        
     </>
   );
+};
+
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const ssg = generateSSGHelper();
+
+  const slug = context.params?.slug;
+
+  if (typeof slug !== "string") throw new Error("no slug");
+
+  const username = slug.replace("@", "");
+
+  await ssg.profile.getUserByUsername.prefetch({ username });
+
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+      username,
+    },
+  };
+};
+
+export const getStaticPaths = () => {
+  return { paths: [], fallback: "blocking" };
 };
 
 export default ProfilePage;

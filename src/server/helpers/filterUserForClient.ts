@@ -1,4 +1,4 @@
 import type { User } from "@clerk/nextjs/server";
 export const filterUserForClient = (user: User) => {
-    return { id: user.id, username: user.username ||  user.firstName || '', profileImageUrl: user.profileImageUrl, emailAddresses: user.emailAddresses }
+    return { id: user.id, username: user.username ||  user.firstName || '', profileImageUrl: user.profileImageUrl}
 };
