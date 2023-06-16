@@ -20,7 +20,7 @@ export const profileRouter = createTRPCRouter({
             limit: 200,
           })
         )
-        const user = users.find((user) => `${user.firstName}_${user.lastName}` === input.username);
+        const user = users.find((user) => (user?.firstName && user?.lastName) && `${user.firstName}_${user.lastName}` === input.username);
         if (!user) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",

@@ -5,13 +5,22 @@ import { api, } from "~/utils/api";
 import { generateSSGHelper } from "~/server/helpers/ssgHelper";
 import { PageLayout } from "~/components/layout";
 import Image from "next/image";
+import { PostView } from "~/components/postView";
 
 
 
 
+const ProfileFeed = (props: { userId: string }) => {
+  return (
+    <div className="flex flex-col">
+      {/* {data.map((fullPost) => (
+        <PostView {...fullPost} key={fullPost.post.id} />
+      ))} */}
+    </div>
+  );
+}
 
 const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
-
   const { data } = api.profile.getUserByUsername.useQuery({ username })
   if (!data) return <div>User Not Found</div>
   return (
@@ -31,6 +40,8 @@ const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
         </div>
         <div className="h-[64px]"></div>
         <div className="p-4 text-2xl font-bold">{`@${data.username ?? "unknown"}`}</div>
+        <div className="w-full border-b border-slate-400" />
+        <ProfileFeed userId={data.id}/>
       </PageLayout>
 
     </>
