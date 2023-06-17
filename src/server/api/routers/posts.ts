@@ -20,7 +20,7 @@ const ratelimit = new Ratelimit({
 });
 
 
-const addUserDataToPost = async (posts: Post[]) => {
+const addUserDataToPosts = async (posts: Post[]) => {
   const userId = posts.map((post) => post.authorId);
   const users = (
     await clerkClient.users.getUserList({
@@ -40,9 +40,20 @@ const addUserDataToPost = async (posts: Post[]) => {
 }
 
 export const postsRouter = createTRPCRouter({
+  getById: publicProcedure
+  .input(z.object({ id: z.string() }))
+  .query(async ({ ctx, input }) => {
+    const post = await ctx.prisma.post.findUnique({
+      where: { id: input.id },
+    });
+
+    if (!post) throw new TRPCError({ code: "NOT_FOUND" });
+
+    return (await addUserDataToPosts([post]))[0];
+  }),
   getAll: publicProcedure.query(async ({ ctx }) => {
     const posts = await ctx.prisma.post.findMany({ take: 100, orderBy: {createdAt: 'desc'} });
-    return addUserDataToPost(posts)
+    return addUserDataToPosts(posts)
   }),
   getPostByUserId: publicProcedure.input(z.object({
     userId: z.string(),
@@ -52,7 +63,7 @@ export const postsRouter = createTRPCRouter({
     },
     take: 100, 
     orderBy: [{createdAt: 'desc'}]
-  }).then(addUserDataToPost)),
+  }).then(addUserDataToPosts)),
   create: privateProcedure.input(z.object({ content: z.string().emoji("Only Emojis are allowed").min(1).max(280) })).mutation(async ({ ctx, input }) => {
     const authorId = ctx.userId
     const {success} = await ratelimit.limit(authorId);
