@@ -5,7 +5,7 @@ import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/ap
 import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
 import { Redis } from "@upstash/redis";
 import { filterUserForClient } from "~/server/helpers/filterUserForClient";
-
+import type { Post } from "@prisma/client";
 // Create a new ratelimiter, that allows 3 requests per 1 minute
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
@@ -20,23 +20,39 @@ const ratelimit = new Ratelimit({
 });
 
 
+const addUserDataToPost = async (posts: Post[]) => {
+  const userId = posts.map((post) => post.authorId);
+  const users = (
+    await clerkClient.users.getUserList({
+      userId: userId,
+      limit: 110,
+    })
+  ).map(filterUserForClient);
+  return posts.map((post) => {
+    const author = users.find((user) => user.id === post.authorId)
+    
+    if (!author) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Author for post not found" })
+    return {
+      post,
+      author: { ...author, username: author.username }, // need to spread the author object and add the username object to ensure type checking
+    }
+  })
+}
 
 export const postsRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     const posts = await ctx.prisma.post.findMany({ take: 100, orderBy: {createdAt: 'desc'} });
-
-    const users = (await clerkClient.users.getUserList({ userId: posts.map((post) => post.authorId), limit: 100 })).map(filterUserForClient)
-    
-    return posts.map((post) => {
-      const author = users.find((user) => user.id === post.authorId)
-      
-      if (!author) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Author for post not found" })
-      return {
-        post,
-        author: { ...author, username: author.username }, // need to spread the author object and add the username object to ensure type checking
-      }
-    })
+    return addUserDataToPost(posts)
   }),
+  getPostByUserId: publicProcedure.input(z.object({
+    userId: z.string(),
+  })).query(({ctx, input}) => ctx.prisma.post.findMany({
+    where: {
+      authorId: input.userId
+    },
+    take: 100, 
+    orderBy: [{createdAt: 'desc'}]
+  }).then(addUserDataToPost)),
   create: privateProcedure.input(z.object({ content: z.string().emoji("Only Emojis are allowed").min(1).max(280) })).mutation(async ({ ctx, input }) => {
     const authorId = ctx.userId
     const {success} = await ratelimit.limit(authorId);
